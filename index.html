@@ -132,6 +132,30 @@
       <h2>Benvenuta nel club! 💕</h2>
       <p>Hai effettuato l'accesso.</p>
       <p id="accountEmail"></p>
+
+<div id="pointsCard" style="
+  background: #F8E8EA;
+  border: 1px solid #C6A56D;
+  border-radius: 18px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+">
+  <h3 style="color: #754B59;">
+    ✨ Il tuo saldo punti ✨
+  </h3>
+
+  <p id="pointsBalance" style="
+    font-size: 36px;
+    font-weight: bold;
+    color: #B99151;
+    margin: 10px 0;
+  ">—</p>
+
+  <p style="font-size: 13px;">
+    Ogni 1 € di acquisti confermati = 1 punto
+  </p>
+</div>
       <button id="logoutBtn">Esci</button>
     </section>
 
@@ -213,6 +237,19 @@
 
       show('account');
       $('accountEmail').textContent = user.email || '';
+    // Carica il saldo punti della cliente
+    $('pointsBalance').textContent = 'Caricamento...';
+
+    const { data: points, error: pointsError } =
+      await supabase.rpc('get_my_points');
+
+    if (pointsError) {
+      $('pointsBalance').textContent = 'Non disponibile';
+      console.error('Errore saldo punti:', pointsError);
+    } else {
+      $('pointsBalance').textContent = String(points ?? 0);
+    }
+
     }
 
     $('logoutBtn').onclick = async () => {
