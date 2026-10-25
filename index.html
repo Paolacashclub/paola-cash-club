@@ -3,51 +3,213 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Paola Cash Club</title>
+
   <style>
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #fff2f7;
-      color: #743b59;
       min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(145deg, #fff1f7, #f8dbe8);
+      color: #743b59;
       display: flex;
-      align-items: center;
       justify-content: center;
-      text-align: center;
+      align-items: center;
+      padding: 20px;
     }
 
     .card {
       background: white;
-      padding: 35px 25px;
-      margin: 20px;
-      border-radius: 24px;
-      box-shadow: 0 8px 25px #e9b9cc66;
-      max-width: 360px;
+      width: 100%;
+      max-width: 390px;
+      padding: 30px 24px;
+      border-radius: 25px;
+      box-shadow: 0 12px 35px #b86d9140;
+      text-align: center;
     }
+
+    .heart { font-size: 44px; }
 
     h1 {
-      color: #c45d91;
-      font-size: 30px;
+      color: #bd598b;
+      margin-bottom: 8px;
     }
 
-    p {
-      line-height: 1.6;
+    p { line-height: 1.5; }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border: 1px solid #e7bbcf;
+      border-radius: 12px;
+      font-size: 16px;
     }
 
-    .heart {
-      font-size: 45px;
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      background: #bd598b;
+      color: white;
+      border: 0;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .secondary {
+      background: #f8e2ed;
+      color: #743b59;
+    }
+
+    .hidden { display: none; }
+
+    #message {
+      font-size: 14px;
+      margin-top: 15px;
+      overflow-wrap: anywhere;
     }
   </style>
 </head>
+
 <body>
-  <div class="card">
+  <main class="card">
     <div class="heart">💗</div>
     <h1>Paola Cash Club</h1>
-    <p>Benvenuta nel tuo club del risparmio!</p>
-    <p>Ogni acquisto ti avvicina a un nuovo premio.</p>
-    <strong>1 € speso = 1 punto</strong>
-  </div>
+    <p>Ogni acquisto ti avvicina a un premio!</p>
+
+    <section id="login">
+      <h2>Accedi</h2>
+      <input id="email" type="email"
+             placeholder="La tua email" autocomplete="email">
+      <input id="password" type="password"
+             placeholder="La tua password"
+             autocomplete="current-password">
+
+      <button id="loginBtn">Entra nel club</button>
+      <button id="showRegister" class="secondary">
+        Non hai un account? Registrati
+      </button>
+    </section>
+
+    <section id="register" class="hidden">
+      <h2>Registrati</h2>
+      <input id="newName" type="text"
+             placeholder="Il tuo nome">
+      <input id="newEmail" type="email"
+             placeholder="La tua email">
+      <input id="newPassword" type="password"
+             placeholder="Crea una password"
+             autocomplete="new-password">
+
+      <button id="registerBtn">Crea account</button>
+      <button id="showLogin" class="secondary">
+        Torna all'accesso
+      </button>
+    </section>
+
+    <section id="account" class="hidden">
+      <h2>Benvenuta nel club! 💕</h2>
+      <p>Hai effettuato l'accesso.</p>
+      <p id="accountEmail"></p>
+      <button id="logoutBtn">Esci</button>
+    </section>
+
+    <p id="message" role="status" aria-live="polite"></p>
+  </main>
+
+  <script type="module">
+    import { createClient } from
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const SUPABASE_URL = 'https://rsxddauxauatmgxsfhgu.supabase.co/rest/v1/';
+    const SUPABASE_KEY = 'sb_publishable_sXF-8aSIj0F1q4PjBKkWHQ_MJ1TDT-y';
+
+    const configured =
+      SUPABASE_URL.startsWith('https://') &&
+      SUPABASE_KEY.startsWith('sb_publishable_');
+
+    const supabase = configured
+      ? createClient(SUPABASE_URL, SUPABASE_KEY)
+      : null;
+
+    const $ = id => document.getElementById(id);
+    const message = text => { $('message').textContent = text; };
+
+    function show(section) {
+      ['login', 'register', 'account'].forEach(id =>
+        $(id).classList.toggle('hidden', id !== section)
+      );
+      message('');
+    }
+
+    $('showRegister').onclick = () => show('register');
+    $('showLogin').onclick = () => show('login');
+
+    $('loginBtn').onclick = async () => {
+      if (!supabase) return message('Configurazione mancante.');
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: $('email').value.trim(),
+        password: $('password').value
+      });
+
+      if (error) return message('Accesso non riuscito. Controlla email e password.');
+      await loadAccount();
+    };
+
+    $('registerBtn').onclick = async () => {
+      if (!supabase) return message('Configurazione mancante.');
+
+      const name = $('newName').value.trim();
+      const email = $('newEmail').value.trim();
+      const password = $('newPassword').value;
+
+      if (!name || !email || password.length < 8) {
+        return message('Inserisci nome, email e una password di almeno 8 caratteri.');
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: name }
+        }
+      });
+
+      if (error) return message('Registrazione non riuscita. Riprova.');
+      show('login');
+      message('Controlla la tua email per confermare la registrazione.');
+    };
+
+    async function loadAccount() {
+      if (!supabase) return;
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        show('login');
+        return;
+      }
+
+      show('account');
+      $('accountEmail').textContent = user.email || '';
+    }
+
+    $('logoutBtn').onclick = async () => {
+      if (!supabase) return;
+      await supabase.auth.signOut();
+      show('login');
+    };
+
+    if (!configured) {
+      message('Collegamento a Supabase da configurare.');
+    } else {
+      loadAccount();
+    }
+  </script>
 </body>
 </html>
