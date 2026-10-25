@@ -112,6 +112,22 @@
       </button>
     </section>
 
+<section id="resetPassword" class="hidden">
+  <h2>Nuova password 🔐</h2>
+  <p>Scegli una nuova password per Paola Cash Club.</p>
+
+  <input
+    id="resetNewPassword"
+    type="password"
+    placeholder="Nuova password (almeno 8 caratteri)"
+    autocomplete="new-password"
+  >
+
+  <button id="saveNewPassword">
+    Salva nuova password
+  </button>
+</section>
+
     <section id="account" class="hidden">
       <h2>Benvenuta nel club! 💕</h2>
       <p>Hai effettuato l'accesso.</p>
@@ -141,7 +157,7 @@
     const message = text => { $('message').textContent = text; };
 
     function show(section) {
-      ['login', 'register', 'account'].forEach(id =>
+      ['login', 'register', 'account', 'resetPassword'].forEach(id =>
         $(id).classList.toggle('hidden', id !== section)
       );
       message('');
@@ -205,11 +221,57 @@
       show('login');
     };
 
+    // Mostra la schermata quando Supabase
+    // conferma il recupero password.
+    if (supabase) {
+      supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          show('resetPassword');
+        }
+      });
+    }
+
+    // Salva la nuova password.
+    $('saveNewPassword').onclick = async () => {
+      if (!supabase) {
+        return message('Collegamento a Supabase mancante.');
+      }
+
+      const newPassword = $('resetNewPassword').value;
+
+      if (newPassword.length < 8) {
+        return message(
+          'La password deve contenere almeno 8 caratteri.'
+        );
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        return message(
+          'Impossibile cambiare la password. Richiedi un nuovo link.'
+        );
+      }
+
+      $('resetNewPassword').value = '';
+      await supabase.auth.signOut();
+      show('login');
+      message(
+        'Password aggiornata! Ora puoi accedere.'
+      );
+    };
+
+    
     if (!configured) {
       message('Collegamento a Supabase da configurare.');
+    } else if (window.location.hash.includes('type=recovery')) {
+      show('resetPassword');
     } else {
       loadAccount();
     }
+
   </script>
 </body>
 </html>
