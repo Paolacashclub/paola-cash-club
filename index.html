@@ -289,6 +289,35 @@
       $('pointsBalance').textContent = String(points ?? 0);
     }
 
+    // Carica i premi aggiornati da Supabase
+    const { data: rewards, error: rewardsError } = await supabase
+      .from('rewards')
+      .select('name, points_cost')
+      .eq('active', true)
+      .order('points_cost', { ascending: true });
+
+    if (rewardsError) {
+      console.error('Errore caricamento premi:', rewardsError);
+    } else {
+      const rewardsList = $('rewardsList');
+      rewardsList.replaceChildren();
+
+      for (const reward of rewards) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#F8E8EA;border:1px solid #C6A56D;border-radius:15px;padding:14px 8px;text-align:center;';
+
+        const name = document.createElement('strong');
+        name.textContent = reward.name;
+
+        const cost = document.createElement('p');
+        cost.style.cssText = 'color:#B99151;font-weight:bold;';
+        cost.textContent = reward.points_cost + ' punti';
+
+        card.append(name, cost);
+        rewardsList.appendChild(card);
+      }
+    }
+
     }
 
     $('logoutBtn').onclick = async () => {
