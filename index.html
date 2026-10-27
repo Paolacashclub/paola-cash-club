@@ -195,7 +195,25 @@
 
   </div>
 </div>
-    <button id="logoutBtn">Esci</button>
+
+<section id="adminPanel" class="hidden"
+  style="margin-top:25px; padding:18px;
+  background:#F8E8EA;
+  border:1px solid #C6A56D;
+  border-radius:18px;">
+
+  <h2>👑 Gestione Premi</h2>
+
+  <p>Qui potrai gestire le richieste
+  dei premi delle tue clienti.</p>
+
+  <div id="adminRedemptions">
+    Caricamento richieste...
+  </div>
+
+</section>
+
+      <button id="logoutBtn">Esci</button>
     </section>
 
     <p id="message" role="status" aria-live="polite"></p>
@@ -276,6 +294,15 @@
 
       show('account');
       $('accountEmail').textContent = user.email || '';
+      
+const { data: adminCheck, error: adminError } =
+  await supabase.rpc('is_admin');
+
+$('adminPanel').classList.toggle(
+  'hidden',
+  adminError || adminCheck !== true
+);
+
     // Carica il saldo punti della cliente
     $('pointsBalance').textContent = 'Caricamento...';
 
