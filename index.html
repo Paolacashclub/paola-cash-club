@@ -299,6 +299,41 @@ const { data: adminCheck, error: adminError } =
   await supabase.rpc('is_admin');
 
 $('adminPanel').classList.toggle(
+
+if (!adminError && adminCheck === true) {
+  const { data: requests, error: requestsError } =
+    await supabase
+      .from('redemptions')
+      .select('id, customer_id, reward_id, points_spent, status, created_at')
+      .order('created_at', { ascending: false });
+
+  const adminList = $('adminRedemptions');
+  adminList.replaceChildren();
+
+  if (requestsError) {
+    adminList.textContent = 'Errore nel caricamento delle richieste.';
+    console.error(requestsError);
+  } else if (!requests || requests.length === 0) {
+    adminList.textContent = 'Nessuna richiesta di premio al momento.';
+  } else {
+    for (const request of requests) {
+      const item = document.createElement('div');
+      item.style.cssText =
+        'background:white;padding:12px;margin:10px 0;border-radius:12px;text-align:left;overflow-wrap:anywhere;';
+
+      const details = document.createElement('p');
+      details.textContent =
+        'Cliente: ' + request.customer_id +
+        ' | Premio n. ' + request.reward_id +
+        ' | Punti: ' + request.points_spent +
+        ' | Stato: ' + request.status;
+
+      item.appendChild(details);
+      adminList.appendChild(item);
+    }
+  }
+}
+
   'hidden',
   adminError || adminCheck !== true
 );
